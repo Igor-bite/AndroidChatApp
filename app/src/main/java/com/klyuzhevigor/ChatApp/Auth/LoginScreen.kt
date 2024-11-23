@@ -1,5 +1,4 @@
-package com.klyuzhevigor.ChatApp
-import android.util.Log
+package com.klyuzhevigor.ChatApp.Auth
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -16,9 +15,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavHostController
+import com.klyuzhevigor.ChatApp.navigateAndClean
 
 
 @Composable
@@ -52,17 +52,12 @@ fun LoginScreen(viewModel: LoginScreenViewModel) {
     }
 }
 
-class LoginScreenViewModel {
+class LoginScreenViewModel(val navController: NavHostController, val auth: AuthManager) {
     fun login(nickname: String) {
         if (nickname.isEmpty()) {
             return
         }
-
+        auth.login(nickname)
+        navController.navigateAndClean("main")
     }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun LoginPreview() {
-    LoginScreen(LoginScreenViewModel())
 }

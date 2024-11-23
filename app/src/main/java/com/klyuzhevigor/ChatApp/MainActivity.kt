@@ -5,12 +5,16 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import com.klyuzhevigor.ChatApp.Auth.AuthManager
+import com.klyuzhevigor.ChatApp.Auth.LoginScreen
+import com.klyuzhevigor.ChatApp.Auth.LoginScreenViewModel
+import com.klyuzhevigor.ChatApp.ChatsList.ChatsListScreen
 import com.klyuzhevigor.ChatApp.ui.theme.ChatAppTheme
 
 class MainActivity : ComponentActivity() {
@@ -20,9 +24,25 @@ class MainActivity : ComponentActivity() {
         setContent {
             ChatAppTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    LoginScreen(viewModel = LoginScreenViewModel())
+                    val navController = rememberNavController()
+                    val auth = AuthManager()
+                    NavHost(navController, startDestination = "login") {
+                        composable("login") {
+                            LoginScreen(viewModel = LoginScreenViewModel(navController, auth))
+                        }
+                        composable("main") {
+                            ChatsListScreen()
+                        }
+                    }
                 }
             }
         }
     }
+}
+
+fun NavHostController.navigateAndClean(route: String) {
+    navigate(route = route) {
+        popUpTo(graph.startDestinationId) { inclusive = true }
+    }
+    graph.setStartDestination(route)
 }
