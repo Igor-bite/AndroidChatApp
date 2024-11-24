@@ -8,7 +8,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.APPLICATION_KEY
+import androidx.lifecycle.ViewModelStoreOwner
+import androidx.lifecycle.viewmodel.MutableCreationExtras
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -21,7 +25,9 @@ import com.klyuzhevigor.ChatApp.Auth.LoginScreenViewModel
 import com.klyuzhevigor.ChatApp.ChatsList.ChatsListScreen
 import com.klyuzhevigor.ChatApp.ChatsList.ChatsListViewModel
 import com.klyuzhevigor.ChatApp.ChatsList.ChatsUiState
+import com.klyuzhevigor.ChatApp.ChatsList.MessagesListViewModel
 import com.klyuzhevigor.ChatApp.ChatsList.MessagingScreen
+import com.klyuzhevigor.ChatApp.Model.Chat
 import com.klyuzhevigor.ChatApp.Services.DefaultAppContainer
 import com.klyuzhevigor.ChatApp.ui.theme.ChatAppTheme
 
@@ -42,12 +48,21 @@ class MainActivity : ComponentActivity() {
                             val vm: ChatsListViewModel =
                                 viewModel(factory = ChatsListViewModel.Factory)
                             ChatsListScreen(vm.chatsUiState, retryAction = vm::getChats, onChatClick = { chat ->
-                                navController.navigate("messaging" + "/$chat")
+                                navController.navigate(Chat(chat))
                             })
                         }
-                        composable("messaging" + "/{chat}") { stackEntry ->
-                            val chat = stackEntry.arguments?.getString("chat")
-                            chat?.let { MessagingScreen(chat = it) }
+                        composable<Chat> { stackEntry ->
+                            val chat = stackEntry.toRoute<Chat>().name
+                            val chatName = chat.split("@")[0]
+                            val extras = MutableCreationExtras().apply {
+                                set(APPLICATION_KEY, (LocalContext.current.applicationContext as ChatsApplication))
+                                set(MessagesListViewModel.CHAT_NAME_KEY, chatName)
+                            }
+                            val vm: MessagesListViewModel = viewModel(
+                                factory = MessagesListViewModel.Factory,
+                                extras = extras
+                            )
+                            MessagingScreen(vm.uiState, { vm.getMessages() })
                         }
                     }
                 }

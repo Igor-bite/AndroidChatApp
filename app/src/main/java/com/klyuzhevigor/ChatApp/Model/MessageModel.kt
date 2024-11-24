@@ -1,5 +1,6 @@
 package com.klyuzhevigor.ChatApp.Model
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import retrofit2.http.Url
 
@@ -14,8 +15,8 @@ data class MessageModel(
 
 @Serializable
 data class MessageData(
-    var Text: MessageDataText?,
-    var Image: MessageDataImage?
+    @SerialName("Text") var text: MessageDataText? = null,
+    @SerialName("Image") var image: MessageDataImage? = null
 )
 
 @Serializable
@@ -25,5 +26,10 @@ data class MessageDataText(
 
 @Serializable
 data class MessageDataImage(
-    var link: Url
+    var link: String
+)
+
+@Serializable
+data class Chat(
+    var name: String
 )
