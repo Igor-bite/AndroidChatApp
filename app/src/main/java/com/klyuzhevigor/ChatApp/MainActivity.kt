@@ -9,14 +9,20 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.toRoute
 import com.klyuzhevigor.ChatApp.Auth.AuthManager
 import com.klyuzhevigor.ChatApp.Auth.LoginScreen
 import com.klyuzhevigor.ChatApp.Auth.LoginScreenViewModel
 import com.klyuzhevigor.ChatApp.ChatsList.ChatsListScreen
+import com.klyuzhevigor.ChatApp.ChatsList.ChatsListViewModel
+import com.klyuzhevigor.ChatApp.ChatsList.ChatsUiState
+import com.klyuzhevigor.ChatApp.ChatsList.MessagingScreen
+import com.klyuzhevigor.ChatApp.Services.DefaultAppContainer
 import com.klyuzhevigor.ChatApp.ui.theme.ChatAppTheme
 
 class MainActivity : ComponentActivity() {
@@ -27,13 +33,21 @@ class MainActivity : ComponentActivity() {
             ChatAppTheme {
                 Scaffold(modifier = Modifier.fillMaxSize().padding(vertical = 64.dp)) { innerPadding ->
                     val navController = rememberNavController()
-                    val auth = AuthManager()
-                    NavHost(navController, startDestination = "login") {
+                    val container = DefaultAppContainer()
+                    NavHost(navController, startDestination = "main") {
                         composable("login") {
-                            LoginScreen(viewModel = LoginScreenViewModel(navController, auth))
+                            LoginScreen(viewModel = LoginScreenViewModel(navController, container.auth))
                         }
                         composable("main") {
-                            ChatsListScreen()
+                            val vm: ChatsListViewModel =
+                                viewModel(factory = ChatsListViewModel.Factory)
+                            ChatsListScreen(vm.chatsUiState, retryAction = vm::getChats, onChatClick = { chat ->
+                                navController.navigate("messaging" + "/$chat")
+                            })
+                        }
+                        composable("messaging" + "/{chat}") { stackEntry ->
+                            val chat = stackEntry.arguments?.getString("chat")
+                            chat?.let { MessagingScreen(chat = it) }
                         }
                     }
                 }
