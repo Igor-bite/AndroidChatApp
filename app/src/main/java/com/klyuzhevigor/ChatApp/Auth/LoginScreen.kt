@@ -14,10 +14,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
+import com.klyuzhevigor.ChatApp.R
 import com.klyuzhevigor.ChatApp.navigateAndClean
 
 
@@ -32,14 +34,14 @@ fun LoginScreen(viewModel: LoginScreenViewModel) {
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text("Welcome to Chat", fontSize = 30.sp, fontWeight = FontWeight.Bold)
+        Text(stringResource(R.string.welcome_to_chat), fontSize = 30.sp, fontWeight = FontWeight.Bold)
 
         Spacer(Modifier.height(20.dp))
 
         OutlinedTextField(value = nickname, onValueChange = {
             nickname = it
         }, label = {
-            Text("Nickname")
+            Text(stringResource(R.string.nickname))
         })
 
         Spacer(Modifier.height(20.dp))
@@ -47,7 +49,7 @@ fun LoginScreen(viewModel: LoginScreenViewModel) {
         Button({
             viewModel.login(nickname)
         }) {
-            Text("Login")
+            Text(stringResource(R.string.login))
         }
     }
 }

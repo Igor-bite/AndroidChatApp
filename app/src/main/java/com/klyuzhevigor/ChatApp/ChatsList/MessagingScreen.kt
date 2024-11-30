@@ -1,6 +1,8 @@
 package com.klyuzhevigor.ChatApp.ChatsList
 
 import android.app.Application
+import android.content.res.Configuration
+import android.icu.text.UnicodeSet.SpanCondition
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.background
@@ -8,6 +10,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -33,6 +36,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -60,14 +64,14 @@ import java.io.IOException
 
 
 @Composable
-fun MessagingScreen(uiState: MessagingUiState, retryAction: () -> Unit, onMessageSent: (String) -> Unit) {
+fun MessagingScreen(uiState: MessagingUiState, retryAction: () -> Unit, onMessageSent: (String) -> Unit, closeAction: (() -> Unit)?) {
     when (uiState) {
         is MessagingUiState.Loading -> LoadingScreen(modifier = Modifier.fillMaxSize())
         is MessagingUiState.Success -> {
             if (uiState.messages.isEmpty()) {
                 EmptyView(onMessageSent)
             } else {
-                MessagesColumn(uiState.messages, onMessageSent)
+                MessagesColumn(uiState.messages, onMessageSent, closeAction)
             }
         }
         is MessagingUiState.Error -> ErrorScreen(retryAction, modifier = Modifier.fillMaxSize())
@@ -75,17 +79,20 @@ fun MessagingScreen(uiState: MessagingUiState, retryAction: () -> Unit, onMessag
 }
 
 @Composable
-fun MessagesColumn(chats: List<MessageModel>, onMessageSent: (String) -> Unit) {
+fun MessagesColumn(chats: List<MessageModel>, onMessageSent: (String) -> Unit, closeAction: (() -> Unit)?) {
     Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.Top) {
-        Text("Messages", fontSize = 44.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 16.dp))
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            Text("Messages", fontSize = 44.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 16.dp))
+
+            closeAction?.let {
+                Button(it, modifier = Modifier.padding(horizontal = 8.dp)) { Text("Close") }
+            }
+        }
 
         Spacer(Modifier.height(20.dp))
 
-        var showPopup by rememberSaveable {
-            mutableStateOf(false)
-        }
-
-        LazyColumn(modifier = Modifier.fillMaxHeight(fraction = 0.9F)) {
+        val fraction = if (LocalConfiguration.current.orientation == Configuration.ORIENTATION_PORTRAIT) 0.9F else 0.75F
+        LazyColumn(modifier = Modifier.fillMaxHeight(fraction)) {
             items(chats) { el ->
                 el.data.text?.let {
                     MessageCell(
@@ -93,6 +100,9 @@ fun MessagesColumn(chats: List<MessageModel>, onMessageSent: (String) -> Unit) {
                     )
                 }
                 el.data.image?.let {
+                    var showPopup by rememberSaveable {
+                        mutableStateOf(false)
+                    }
                     Box(
                         modifier = Modifier.clickable { showPopup = true }
                     ) {
@@ -127,22 +137,24 @@ fun MessagesColumn(chats: List<MessageModel>, onMessageSent: (String) -> Unit) {
 fun InputView(onMessageSent: (String) -> Unit) {
     var newMessage by remember { mutableStateOf("") }
 
-    Row {
+    Row(modifier = Modifier.height(60.dp)) {
         TextField(
             newMessage,
             onValueChange = {
                 newMessage = it
             },
-            modifier = Modifier.fillMaxWidth(fraction = 0.8F).padding(horizontal = 4.dp),
+            modifier = Modifier
+                .fillMaxWidth(fraction = 0.8F)
+                .padding(horizontal = 4.dp),
             placeholder = {
-                Text("New message")
+                Text(stringResource(R.string.new_message))
             }
         )
 
         Button({
             onMessageSent(newMessage)
             newMessage = ""
-        }) { Text("Send") }
+        }) { Text(stringResource(R.string.send)) }
     }
 }
 
@@ -168,7 +180,9 @@ fun MessageCell(text: String) {
 @Composable
 fun EmptyView(onMessageSent: (String) -> Unit) {
     Column(Modifier.fillMaxSize()) {
-        Column(verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(32.dp).fillMaxHeight(fraction = 0.9F)) {
+        Column(verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier
+            .padding(32.dp)
+            .fillMaxHeight(fraction = 0.9F)) {
             Text(
                 stringResource(R.string.no_messages_in_this_chat_yet),
                 fontSize = 30.sp,
@@ -190,7 +204,7 @@ sealed interface MessagingUiState {
 class MessagesListViewModel(
     private val authManager: AuthManager,
     private val chatsRepository: ChatsRepository,
-    private val chat: String
+    private var chat: String
 ) : ViewModel() {
     var uiState: MessagingUiState by mutableStateOf(MessagingUiState.Loading)
         private set
@@ -200,6 +214,11 @@ class MessagesListViewModel(
     }
 
     init {
+        getMessages()
+    }
+
+    fun setChat(selectedChat: String) {
+        chat = selectedChat
         getMessages()
     }
 

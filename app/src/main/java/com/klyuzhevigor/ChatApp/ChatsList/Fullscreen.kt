@@ -35,7 +35,7 @@ fun PopupBox( onClickOutside: () -> Unit, content:@Composable () -> Unit) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.Blue)
+                .background(Color.Black)
                 .zIndex(10F),
             contentAlignment = Alignment.Center
         ) {
