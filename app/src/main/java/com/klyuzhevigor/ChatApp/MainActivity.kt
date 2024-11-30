@@ -34,15 +34,14 @@ import com.klyuzhevigor.ChatApp.ui.theme.ChatAppTheme
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
         setContent {
             ChatAppTheme {
-                Scaffold(modifier = Modifier.fillMaxSize().padding(vertical = 64.dp)) { innerPadding ->
+                Scaffold(modifier = Modifier.fillMaxSize().padding(top = 16.dp)) { innerPadding ->
                     val navController = rememberNavController()
-                    val container = DefaultAppContainer()
+                    val app = LocalContext.current.applicationContext as ChatsApplication
                     NavHost(navController, startDestination = "main") {
                         composable("login") {
-                            LoginScreen(viewModel = LoginScreenViewModel(navController, container.auth))
+                            LoginScreen(viewModel = LoginScreenViewModel(navController, app.container.auth))
                         }
                         composable("main") {
                             val vm: ChatsListViewModel =

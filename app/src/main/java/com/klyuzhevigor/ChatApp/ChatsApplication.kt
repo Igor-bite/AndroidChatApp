@@ -24,5 +24,6 @@ class ChatsApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         container = DefaultAppContainer()
+        container.init(applicationContext)
     }
 }
