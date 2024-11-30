@@ -2,6 +2,7 @@ package com.klyuzhevigor.ChatApp.Services
 
 import android.content.Context
 import android.net.ConnectivityManager
+import android.widget.Toast
 import com.klyuzhevigor.ChatApp.Model.MessageData
 import com.klyuzhevigor.ChatApp.Model.MessageDataImage
 import com.klyuzhevigor.ChatApp.Model.MessageDataText
@@ -16,6 +17,7 @@ import java.net.InetAddress
 interface ChatsRepository {
     suspend fun getChats(): List<String>
     suspend fun getMessages(chat: String): List<MessageModel>
+    suspend fun sendMessage(chat: String, text: String)
 }
 
 class NetworkChatsRepository(
@@ -29,7 +31,24 @@ class NetworkChatsRepository(
 
     override suspend fun getMessages(chat: String): List<MessageModel> {
         return withContext(Dispatchers.IO) {
-            chatsDataProvider.getMessages(chat)
+            chatsDataProvider.getMessages(chat + "@channel")
+        }
+    }
+
+    override suspend fun sendMessage(chat: String, text: String) {
+        withContext(Dispatchers.IO) {
+            chatsDataProvider.sendMessage(
+                MessageModel(
+                    0,
+                    "hello_world",
+                    chat,
+                    MessageData(
+                        MessageDataText(text),
+                        null
+                    ),
+                    0
+                )
+            )
         }
     }
 }
@@ -72,6 +91,12 @@ class MainChatsRepository(
                     time = it.time
                 )
             }
+        }
+    }
+
+    override suspend fun sendMessage(chat: String, text: String) {
+        withContext(Dispatchers.IO) {
+            network.sendMessage(chat, text)
         }
     }
 

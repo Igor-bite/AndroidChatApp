@@ -61,7 +61,7 @@ class MainActivity : ComponentActivity() {
                                 factory = MessagesListViewModel.Factory,
                                 extras = extras
                             )
-                            MessagingScreen(vm.uiState, { vm.getMessages() })
+                            MessagingScreen(vm.uiState, { vm.getMessages() }, { vm.sendNewMessage(it) })
                         }
                     }
                 }
