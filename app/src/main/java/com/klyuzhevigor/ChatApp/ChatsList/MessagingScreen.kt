@@ -23,6 +23,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -36,6 +37,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -52,12 +54,21 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.CreationExtras
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import androidx.paging.Pager
+import androidx.paging.PagingConfig
+import androidx.paging.PagingData
+import androidx.paging.PagingSource
+import androidx.paging.cachedIn
+import androidx.paging.compose.collectAsLazyPagingItems
+import androidx.paging.compose.itemKey
 import coil3.compose.AsyncImage
 import com.klyuzhevigor.ChatApp.Auth.AuthManager
 import com.klyuzhevigor.ChatApp.ChatsApplication
 import com.klyuzhevigor.ChatApp.Model.MessageModel
 import com.klyuzhevigor.ChatApp.R
 import com.klyuzhevigor.ChatApp.Services.ChatsRepository
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.count
 import kotlinx.coroutines.launch
 import retrofit2.HttpException
 import java.io.IOException
@@ -68,10 +79,10 @@ fun MessagingScreen(uiState: MessagingUiState, retryAction: () -> Unit, onMessag
     when (uiState) {
         is MessagingUiState.Loading -> LoadingScreen(modifier = Modifier.fillMaxSize())
         is MessagingUiState.Success -> {
-            if (uiState.messages.isEmpty()) {
+            if (uiState.pager.collectAsLazyPagingItems().itemCount == 0) {
                 EmptyView(onMessageSent)
             } else {
-                MessagesColumn(uiState.messages, onMessageSent, closeAction)
+                MessagesColumn(uiState.pager, onMessageSent, closeAction)
             }
         }
         is MessagingUiState.Error -> ErrorScreen(retryAction, modifier = Modifier.fillMaxSize())
@@ -79,7 +90,11 @@ fun MessagingScreen(uiState: MessagingUiState, retryAction: () -> Unit, onMessag
 }
 
 @Composable
-fun MessagesColumn(chats: List<MessageModel>, onMessageSent: (String) -> Unit, closeAction: (() -> Unit)?) {
+fun MessagesColumn(
+    pager: Flow<PagingData<MessageModel>>,
+    onMessageSent: (String) -> Unit,
+    closeAction: (() -> Unit)?
+) {
     Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.Top) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             Text("Messages", fontSize = 44.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 16.dp))
@@ -92,44 +107,65 @@ fun MessagesColumn(chats: List<MessageModel>, onMessageSent: (String) -> Unit, c
         Spacer(Modifier.height(20.dp))
 
         val fraction = if (LocalConfiguration.current.orientation == Configuration.ORIENTATION_PORTRAIT) 0.9F else 0.75F
+        val lazyPagingItems = pager.collectAsLazyPagingItems()
         LazyColumn(modifier = Modifier.fillMaxHeight(fraction)) {
-            items(chats) { el ->
-                el.data.text?.let {
-                    MessageCell(
-                        text = it.text
-                    )
-                }
-                el.data.image?.let {
-                    var showPopup by rememberSaveable {
-                        mutableStateOf(false)
-                    }
-                    Box(
-                        modifier = Modifier.clickable { showPopup = true }
-                    ) {
-                        AsyncImage(
-                            model = "https://faerytea.name:8008/thumb/" + it.link,
-                            contentDescription = null,
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(16.dp)
+            items(
+                lazyPagingItems.itemCount,
+                key = lazyPagingItems.itemKey { it.id }
+            ) { index ->
+                val el = lazyPagingItems[index]
+                el?.let {
+                    el.data.text?.let {
+                        MessageCell(
+                            text = it.text
                         )
-                        if (showPopup) {
-                            PopupBox(onClickOutside = { showPopup = false }) {
-                                AsyncImage(
-                                    model = "https://faerytea.name:8008/img/" + it.link,
-                                    contentDescription = null,
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .padding(16.dp)
-                                )
+                    }
+                    el.data.image?.let {
+                        var showPopup by rememberSaveable {
+                            mutableStateOf(false)
+                        }
+                        Box(
+                            modifier = Modifier.clickable { showPopup = true }
+                        ) {
+                            AsyncImage(
+                                model = "https://faerytea.name:8008/thumb/" + it.link,
+                                contentDescription = null,
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(16.dp)
+                            )
+                            if (showPopup) {
+                                PopupBox(onClickOutside = { showPopup = false }) {
+                                    AsyncImage(
+                                        model = "https://faerytea.name:8008/img/" + it.link,
+                                        contentDescription = null,
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .padding(16.dp)
+                                    )
+                                }
                             }
                         }
                     }
+                }
+                if (el == null) {
+                    MessagePlaceholder()
                 }
             }
         }
 
         InputView(onMessageSent)
+    }
+}
+
+@Composable
+fun MessagePlaceholder() {
+    Box(
+        Modifier
+            .fillMaxWidth()
+            .height(48.dp)
+    ) {
+        CircularProgressIndicator()
     }
 }
 
@@ -196,7 +232,7 @@ fun EmptyView(onMessageSent: (String) -> Unit) {
 }
 
 sealed interface MessagingUiState {
-    data class Success(val messages: List<MessageModel>) : MessagingUiState
+    data class Success(val pager: Flow<PagingData<MessageModel>>) : MessagingUiState
     data object Error : MessagingUiState
     data object Loading : MessagingUiState
 }
@@ -208,6 +244,8 @@ class MessagesListViewModel(
 ) : ViewModel() {
     var uiState: MessagingUiState by mutableStateOf(MessagingUiState.Loading)
         private set
+
+    private val pagingSource = MessagesPagingSource(chatsRepository, chat)
 
     override fun onCleared() {
         super.onCleared()
@@ -228,7 +266,14 @@ class MessagesListViewModel(
                 uiState = MessagingUiState.Loading
             }
             uiState = try {
-                MessagingUiState.Success(chatsRepository.getMessages(chat))
+                val pager = Pager(
+                    PagingConfig(pageSize = 20),
+                    initialKey = 0,
+                    pagingSourceFactory = {
+                        pagingSource
+                    }
+                ).flow.cachedIn(viewModelScope)
+                MessagingUiState.Success(pager)
             } catch (e: IOException) {
                 MessagingUiState.Error
             } catch (e: HttpException) {

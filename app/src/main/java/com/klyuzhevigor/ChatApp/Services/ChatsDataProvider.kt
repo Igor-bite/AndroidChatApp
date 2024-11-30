@@ -6,6 +6,7 @@ import retrofit2.http.GET
 import retrofit2.http.Headers
 import retrofit2.http.POST
 import retrofit2.http.Path
+import retrofit2.http.Query
 
 interface ChatsDataProvider {
     @Headers("X-Auth-Token: ZDY3MTMxZTU2OWJhYTdiZA==")
@@ -14,7 +15,7 @@ interface ChatsDataProvider {
 
     @Headers("X-Auth-Token: ZDY3MTMxZTU2OWJhYTdiZA==")
     @GET("channel/{chat}")
-    suspend fun getMessages(@Path("chat") chat: String): List<MessageModel>
+    suspend fun getMessages(@Path("chat") chat: String, @Query("lastKnownId") lastId: Long): List<MessageModel>
 
     @Headers("X-Auth-Token: ZDY3MTMxZTU2OWJhYTdiZA==")
     @POST("messages")

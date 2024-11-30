@@ -17,7 +17,7 @@ import java.net.InetAddress
 
 interface ChatsRepository {
     suspend fun getChats(): List<String>
-    suspend fun getMessages(chat: String): List<MessageModel>
+    suspend fun getMessages(chat: String, lastId: Long): List<MessageModel>
     suspend fun sendMessage(chat: String, text: String)
 }
 
@@ -30,10 +30,10 @@ class NetworkChatsRepository(
         }
     }
 
-    override suspend fun getMessages(chat: String): List<MessageModel> {
+    override suspend fun getMessages(chat: String, lastId: Long): List<MessageModel> {
         return withContext(Dispatchers.IO) {
             Log.i("getMessages", "Request: " + chat + "@channel")
-            chatsDataProvider.getMessages(chat)
+            chatsDataProvider.getMessages(chat, lastId)
         }
     }
 
@@ -73,9 +73,9 @@ class MainChatsRepository(
         }
     }
 
-    override suspend fun getMessages(chat: String): List<MessageModel> {
+    override suspend fun getMessages(chat: String, lastId: Long): List<MessageModel> {
         if (isInternetAvailable()) {
-            val messages = network.getMessages(chat)
+            val messages = network.getMessages(chat, lastId)
             db.insertMessages(messages.map { it.toDbEntity() })
             return messages
         } else {
