@@ -49,7 +49,8 @@ class MainActivity : ComponentActivity() {
                 Scaffold(modifier = Modifier.fillMaxSize().padding(top = 16.dp)) { innerPadding ->
                     val navController = rememberNavController()
                     val app = LocalContext.current.applicationContext as ChatsApplication
-                    NavHost(navController, startDestination = "main") {
+                    val start = if (app.container.tokenStorage.getToken() == null) "login" else "main"
+                    NavHost(navController, startDestination = start) {
                         composable("login") {
                             LoginScreen(viewModel = LoginScreenViewModel(navController, app.container.auth))
                         }
