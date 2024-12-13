@@ -3,6 +3,7 @@ package com.klyuzhevigor.ChatApp.Services
 import android.annotation.SuppressLint
 import android.content.Context
 import android.net.ConnectivityManager
+import androidx.compose.ui.platform.LocalContext
 import androidx.room.Room
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
 import com.klyuzhevigor.ChatApp.Auth.AuthManager
@@ -10,6 +11,7 @@ import com.klyuzhevigor.ChatApp.Auth.Authorization
 import com.klyuzhevigor.ChatApp.Auth.TokenStorage
 import com.klyuzhevigor.ChatApp.database.AppDatabase
 import com.klyuzhevigor.ChatApp.database.DBChatsRepository
+import com.klyuzhevigor.ChatApp.themeselector.ThemePreferences
 import kotlinx.serialization.json.Json
 import okhttp3.Interceptor
 import okhttp3.MediaType.Companion.toMediaType
@@ -126,6 +128,10 @@ class DefaultAppContainer {
                 tokenStorage.clearToken()
             }
         }
+    }
+
+    val themePreferences: ThemePreferences by lazy {
+        ThemePreferences(applicationContext)
     }
 
     private val authApiService: Authorization by lazy {

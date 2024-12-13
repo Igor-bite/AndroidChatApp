@@ -1,5 +1,6 @@
 package com.klyuzhevigor.ChatApp.ChatsList
 
+import android.media.Image
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -11,10 +12,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -48,22 +51,31 @@ import retrofit2.HttpException
 import java.io.IOException
 
 @Composable
-fun ChatsListScreen(chatsUiState: ChatsUiState, retryAction: () -> Unit, onChatClick: (chat: String) -> Unit, logoutAction: (() -> Unit)?) {
+fun ChatsListScreen(chatsUiState: ChatsUiState, retryAction: () -> Unit, onChatClick: (chat: String) -> Unit, logoutAction: (() -> Unit)?, openThemeAction: () -> Unit) {
     when (chatsUiState) {
         is ChatsUiState.Loading -> LoadingScreen(modifier = Modifier.fillMaxSize())
-        is ChatsUiState.Success -> ChatsColumn(chatsUiState.chats, onChatClick, logoutAction)
+        is ChatsUiState.Success -> ChatsColumn(chatsUiState.chats, onChatClick, logoutAction, openThemeAction)
         is ChatsUiState.Error -> ErrorScreen(retryAction, modifier = Modifier.fillMaxSize())
     }
 }
 
 @Composable
-fun ChatsColumn(chats: List<String>, onChatClick: (chat: String) -> Unit, logoutAction: (() -> Unit)?) {
+fun ChatsColumn(chats: List<String>, onChatClick: (chat: String) -> Unit, logoutAction: (() -> Unit)?, openThemeAction: () -> Unit) {
     Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.Top) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             Text("Chats", fontSize = 44.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 16.dp))
 
-            logoutAction?.let {
-                Button(it, modifier = Modifier.padding(horizontal = 8.dp)) { Text("Logout") }
+            Row {
+                logoutAction?.let {
+                    Button(it, modifier = Modifier.padding(horizontal = 8.dp)) { Text("Logout") }
+                }
+
+                Spacer(Modifier.width(4.dp))
+
+                Button(
+                    openThemeAction,
+                    modifier = Modifier.padding(horizontal = 8.dp)
+                ) { Text("Theme") }
             }
         }
 

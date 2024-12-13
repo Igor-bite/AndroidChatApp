@@ -5,6 +5,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -39,20 +40,30 @@ import com.klyuzhevigor.ChatApp.ChatsList.MessagesListViewModel
 import com.klyuzhevigor.ChatApp.ChatsList.MessagingScreen
 import com.klyuzhevigor.ChatApp.Model.Chat
 import com.klyuzhevigor.ChatApp.Services.DefaultAppContainer
+import com.klyuzhevigor.ChatApp.themeselector.ThemeOption
+import com.klyuzhevigor.ChatApp.themeselector.ThemePreferences
+import com.klyuzhevigor.ChatApp.themeselector.ThemeSelectionScreen
 import com.klyuzhevigor.ChatApp.ui.theme.ChatAppTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            ChatAppTheme {
+            var themeOption by remember { mutableStateOf(ThemeOption.SYSTEM) }
+            ChatAppTheme(darkTheme = if (themeOption == ThemeOption.SYSTEM) isSystemInDarkTheme() else themeOption == ThemeOption.DARK) {
                 Scaffold(modifier = Modifier.fillMaxSize().padding(top = 16.dp)) { innerPadding ->
                     val navController = rememberNavController()
                     val app = LocalContext.current.applicationContext as ChatsApplication
+                    themeOption = app.container.themePreferences.themeOption
                     val start = if (app.container.tokenStorage.getToken() == null) "login" else "main"
                     NavHost(navController, startDestination = start) {
                         composable("login") {
                             LoginScreen(viewModel = LoginScreenViewModel(navController, app.container.auth))
+                        }
+                        composable("theme") {
+                            ThemeSelectionScreen(app.container.themePreferences) {
+                                themeOption = it
+                            }
                         }
                         composable("main") {
                             val vm: ChatsListViewModel =
@@ -65,6 +76,8 @@ class MainActivity : ComponentActivity() {
                                     }, logoutAction = {
                                         app.container.auth.logout()
                                         navController.navigate("login")
+                                    }, openThemeAction = {
+                                        navController.navigate("theme")
                                     })
                                 } else {
                                     // land
@@ -86,7 +99,10 @@ class MainActivity : ComponentActivity() {
                                                     messagingVM.setChat(chat)
                                                     selectedChat = chat
                                                 }, logoutAction = {
-
+                                                    app.container.auth.logout()
+                                                    navController.navigate("login")
+                                                }, openThemeAction = {
+                                                    navController.navigate("theme")
                                                 })
                                         }
                                         if (selectedChat != "") {
