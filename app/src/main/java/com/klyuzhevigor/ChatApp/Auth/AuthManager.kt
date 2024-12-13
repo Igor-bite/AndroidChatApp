@@ -5,7 +5,7 @@ import com.klyuzhevigor.ChatApp.Services.AuthTokenInterceptor
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.RequestBody.Companion.toRequestBody
 
-class AuthManager(private val authApiService: Authorization, private val tokenSetter: (String) -> Unit) {
+class AuthManager(private val authApiService: Authorization, private val tokenSetter: (String?) -> Unit) {
     private var nickname: String = ""
     private var password: String = ""
     var token: String = ""
@@ -13,6 +13,13 @@ class AuthManager(private val authApiService: Authorization, private val tokenSe
     suspend fun login(nickname: String) {
         this.nickname = nickname
         fetchToken()
+    }
+
+    fun logout() {
+        this.nickname = ""
+        this.password = ""
+        this.token = ""
+        tokenSetter(null)
     }
 
     private suspend fun fetchToken() {

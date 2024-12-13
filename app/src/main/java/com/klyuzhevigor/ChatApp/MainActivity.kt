@@ -62,6 +62,9 @@ class MainActivity : ComponentActivity() {
                                     // port
                                     ChatsListScreen(vm.chatsUiState, retryAction = vm::getChats, onChatClick = { chat ->
                                         navController.navigate(Chat(chat))
+                                    }, logoutAction = {
+                                        app.container.auth.logout()
+                                        navController.navigate("login")
                                     })
                                 } else {
                                     // land
@@ -82,6 +85,8 @@ class MainActivity : ComponentActivity() {
                                                 onChatClick = { chat ->
                                                     messagingVM.setChat(chat)
                                                     selectedChat = chat
+                                                }, logoutAction = {
+
                                                 })
                                         }
                                         if (selectedChat != "") {

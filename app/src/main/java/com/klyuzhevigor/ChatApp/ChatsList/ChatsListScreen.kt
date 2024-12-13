@@ -4,6 +4,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -47,18 +48,24 @@ import retrofit2.HttpException
 import java.io.IOException
 
 @Composable
-fun ChatsListScreen(chatsUiState: ChatsUiState, retryAction: () -> Unit, onChatClick: (chat: String) -> Unit) {
+fun ChatsListScreen(chatsUiState: ChatsUiState, retryAction: () -> Unit, onChatClick: (chat: String) -> Unit, logoutAction: (() -> Unit)?) {
     when (chatsUiState) {
         is ChatsUiState.Loading -> LoadingScreen(modifier = Modifier.fillMaxSize())
-        is ChatsUiState.Success -> ChatsColumn(chatsUiState.chats, onChatClick = onChatClick)
+        is ChatsUiState.Success -> ChatsColumn(chatsUiState.chats, onChatClick, logoutAction)
         is ChatsUiState.Error -> ErrorScreen(retryAction, modifier = Modifier.fillMaxSize())
     }
 }
 
 @Composable
-fun ChatsColumn(chats: List<String>, onChatClick: (chat: String) -> Unit) {
+fun ChatsColumn(chats: List<String>, onChatClick: (chat: String) -> Unit, logoutAction: (() -> Unit)?) {
     Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.Top) {
-        Text("Chats", fontSize = 44.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 16.dp))
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            Text("Chats", fontSize = 44.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 16.dp))
+
+            logoutAction?.let {
+                Button(it, modifier = Modifier.padding(horizontal = 8.dp)) { Text("Logout") }
+            }
+        }
 
         Spacer(Modifier.height(20.dp))
 

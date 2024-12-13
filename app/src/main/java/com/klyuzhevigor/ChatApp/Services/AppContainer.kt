@@ -119,8 +119,12 @@ class DefaultAppContainer {
     }
 
     val auth: AuthManager by lazy {
-        AuthManager(authApiService) {
-            tokenStorage.saveToken(it)
+        AuthManager(authApiService) { token ->
+            if (token != null) {
+                tokenStorage.saveToken(token)
+            } else {
+                tokenStorage.clearToken()
+            }
         }
     }
 
